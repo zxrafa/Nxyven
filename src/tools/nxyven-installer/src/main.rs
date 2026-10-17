@@ -190,41 +190,28 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             });
 
-            // Find current source repository path
-            let current_repo = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .parent()
-                .and_then(|p| p.parent())
-                .unwrap_or(&target_dir)
-                .to_path_buf();
+            // Locate and deploy 64-bit production payload
+            let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|p| p.to_path_buf()));
+            let candidate_dirs = [
+                exe_dir.as_ref().map(|p| p.join("payload")),
+                exe_dir.as_ref().map(|p| p.join("NXYVEN/payload")),
+                Some(PathBuf::from(r"C:\Users\MANCER\Downloads\NXyven\NXYVEN\payload")),
+                Some(PathBuf::from(r"C:\Users\MANCER\Downloads\NXyven\staging")),
+            ];
 
-            // Deploy application tree
-            let assets_src = current_repo.join("assets");
-            if assets_src.exists() {
-                let _ = copy_dir_all(&assets_src, &target_dir.join("assets"));
+            for candidate in candidate_dirs.into_iter().flatten() {
+                if candidate.exists() && (candidate.join("NXYVEN.exe").exists() || candidate.join("concat.exe").exists()) {
+                    let _ = copy_dir_all(&candidate, &target_dir);
+                    if !target_dir.join("NXYVEN.exe").exists() && target_dir.join("concat.exe").exists() {
+                        let _ = std::fs::copy(target_dir.join("concat.exe"), target_dir.join("NXYVEN.exe"));
+                    }
+                    break;
+                }
             }
 
-            let packages_src = current_repo.join("src/crates/concat-effects/packages");
-            if packages_src.exists() {
-                let _ = copy_dir_all(&packages_src, &target_dir.join("packages"));
-            }
-
-            // Create launcher / main executable binary
             let exe_target = target_dir.join("NXYVEN.exe");
-            let cargo_bin = current_repo.join("src/target/debug/concat.exe");
-            if cargo_bin.exists() {
-                let _ = std::fs::copy(&cargo_bin, &exe_target);
-            } else {
-                // Generate self-contained NXYVEN launcher
-                let launcher_cmd = format!(
-                    "@echo off\r\n\
-                     title NXYVEN Video Editor\r\n\
-                     echo Iniciando NXYVEN Pro v1.0.0...\r\n\
-                     start \"\" \"%~dp0assets\\NXYVEN.cmd\" 2>nul || start \"\" \"{}\"\r\n\
-                     exit\r\n",
-                    target_dir.display()
-                );
-                let _ = std::fs::write(&exe_target, launcher_cmd);
-            }
+            let icon_target = target_dir.join("nxyven.ico");
+            let icon_opt = if icon_target.exists() { Some(icon_target.as_path()) } else { None };
 
             thread::sleep(Duration::from_millis(400));
 
@@ -254,7 +241,15 @@ fn main() -> Result<(), slint::PlatformError> {
             if desktop_shortcut {
                 if let Some(desktop) = dirs::desktop_dir() {
                     let shortcut = desktop.join("NXYVEN.lnk");
-                    let _ = create_shortcut(&exe_target, &shortcut, None);
+                    let _ = create_shortcut(&exe_target, &shortcut, icon_opt);
+                }
+            }
+
+            if start_menu_shortcut {
+                if let Some(data_dir) = dirs::data_dir() {
+                    let programs = data_dir.join("Microsoft").join("Windows").join("Start Menu").join("Programs");
+                    let shortcut = programs.join("NXYVEN.lnk");
+                    let _ = create_shortcut(&exe_target, &shortcut, icon_opt);
                 }
             }
 
