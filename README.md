@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/icons/nxyven_logo_256.png" alt="NXYVEN" width="100" />
+  <img src="assets/icons/nxyven_logo_256.png" alt="NXYVEN" width="120" />
 </p>
 
 <h1 align="center">NXYVEN</h1>
@@ -17,36 +17,20 @@
 
 ## Sobre o NXYVEN
 
-O **NXYVEN** é um editor de vídeo comercial e criativo desktop, construído com motor nativo em Rust e renderizador acelerado por GPU (WGSL/WGPU). Desenvolvido para oferecer máxima fluidez e liberdade criativa, ele executa inteligência artificial local para legendas automáticas, síntese e clonagem de voz, e recorte inteligente de silhueta.
+O **NXYVEN** é um editor de vídeo comercial e criativo desktop de alta performance, construído com motor nativo em Rust e renderizador acelerado por GPU (WGSL/WGPU). Desenvolvido para oferecer máxima fluidez e liberdade criativa, ele executa inteligência artificial local para legendas automáticas, síntese e clonagem de voz, e recorte inteligente de silhueta.
 
-O NXYVEN possui identidade de execução e configuração totalmente isolada (`app.nxyven.editor`), permitindo coexistência e execução simultânea com qualquer outro editor sem conflitos de cache, pastas ou processos.
+O NXYVEN possui identidade de execução e configuração totalmente própria e isolada (`app.nxyven.editor`), com suporte a instalação independente e sem dependência de serviços externos.
 
 ### Principais Funcionalidades
 
 - ⚡ **Zero Marcas d'Água e Sem Conta:** Totalmente gratuito, sem paywalls nem assinaturas.
 - 🔒 **100% Local e Privado:** Nenhum vídeo ou áudio é enviado para servidores na nuvem. Os modelos de IA rodam offline direto no hardware do seu PC.
-- 🎨 **Estética Dark Radiant:** Interface elegante em tons neutros profundos (`#0D0D12`) com acentuação laranja (`#FF6A24`).
+- 🎨 **Estética Dark Radiant:** Interface elegante em tons neutros profundos (`#0D0D12`) com acentuação Radiant Orange (`#FF6A24`).
 - 💬 **Legendas Automáticas com Whisper:** Reconhecimento de fala local e estilização instantânea na timeline.
-- 🗣️ **Text-to-Speech & Voice Cloning:** Geração de locuções a partir de amostras de áudio.
+- 🗣️ **Text-to-Speech & Voice Cloning:** Geração de locuções a partir de amostras de áudio locais.
 - 🎞️ **Animação por Keyframes:** Controle milimétrico de posição, rotação, escala, opacidade e curvas Bezier.
 - ✨ **Biblioteca de Efeitos:** Mais de 120 shaders e transições renderizados em tempo real pela GPU.
-- 📦 **Instalador Autônomo e Leve:** Setup moderno com design cardSlint, criação automática de atalhos e integração ao Windows.
-
----
-
-## Atribuição e Projetos Upstream (Créditos & Licenças)
-
-O NXYVEN é construído com orgulho sobre a base de projetos pioneiros de código aberto:
-
-- **[Concat](https://github.com/jub0t/Concat)** criado por **Jareer (@jub0t)** e contribuidores da comunidade Concat, licenciado sob a [GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html).
-- **[Drift](https://github.com/drift-editor/drift)** por contribuidores do projeto Drift, licenciado sob a [GNU General Public License v3.0 (GPL-3.0)](https://www.gnu.org/licenses/gpl-3.0.html).
-
-Agradecemos imensamente a todos os desenvolvedores open-source que tornam o ecossistema de criação livre viável e avançado.
-
-### Contribuidores Upstream
-<a href="https://github.com/jub0t/Concat/graphs/contributors">
-  <img alt="Upstream Contributors" src="https://contrib.rocks/image?repo=jub0t/concat" />
-</a>
+- 📦 **Instalador Autônomo e Leve:** Setup moderno com design cardSlint, criação automática de atalhos e integração nativa ao Windows.
 
 ---
 
@@ -56,3 +40,9 @@ Baixe o instalador executável oficial na página de **[Releases](https://github
 - **`NXYVEN-1.0.0-Setup.exe`** (Instalador autônomo para Windows 10 e Windows 11 x64).
 
 Execute o instalador, selecione o diretório de sua preferência e crie vídeos com máxima performance.
+
+---
+
+## Licença
+
+Distribuído sob licença livre [AGPL-3.0-or-later](LICENSE).
