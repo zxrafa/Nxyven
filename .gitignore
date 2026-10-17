@@ -58,3 +58,11 @@ desktop.ini
 # FFmpeg built for a phone by src/scripts/ffmpeg-mobile.sh: sources,
 # build trees and the installed prefixes, all machine-built.
 /src/vendor/
+
+# Binaries, Staging and Installer Payloads (Distributed via GitHub Releases)
+payload/
+staging/
+*.zip
+*.exe
+*.msi
+.deps/

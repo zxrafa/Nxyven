@@ -119,6 +119,22 @@ fn main() -> Result<(), slint::PlatformError> {
     let default_path = default_install_dir();
     window.set_install_path(slint::SharedString::from(default_path.to_string_lossy().as_ref()));
 
+    // Window Drag callback
+    window.on_begin_drag(move || {
+        #[cfg(target_os = "windows")]
+        unsafe {
+            use std::ffi::c_void;
+            #[link(name = "user32")]
+            extern "system" {
+                fn ReleaseCapture() -> i32;
+                fn SendMessageW(hwnd: *mut c_void, msg: u32, wparam: usize, lparam: isize) -> isize;
+                fn GetForegroundWindow() -> *mut c_void;
+            }
+            ReleaseCapture();
+            SendMessageW(GetForegroundWindow(), 0x0112, 0xF012, 0);
+        }
+    });
+
     // Minimize callback
     let w_weak = window.as_weak();
     window.on_minimize_window(move || {
@@ -191,6 +207,7 @@ fn main() -> Result<(), slint::PlatformError> {
             });
 
             // Locate and deploy 64-bit production payload
+            let mut extracted = false;
             let exe_dir = std::env::current_exe().ok().and_then(|p| p.parent().map(|p| p.to_path_buf()));
             let candidate_dirs = [
                 exe_dir.as_ref().map(|p| p.join("payload")),
@@ -205,7 +222,20 @@ fn main() -> Result<(), slint::PlatformError> {
                     if !target_dir.join("NXYVEN.exe").exists() && target_dir.join("concat.exe").exists() {
                         let _ = std::fs::copy(target_dir.join("concat.exe"), target_dir.join("NXYVEN.exe"));
                     }
+                    extracted = true;
                     break;
+                }
+            }
+
+            // Fallback: Self-extracting archive (extract embedded zip payload via native tar)
+            if !extracted {
+                if let Ok(self_exe) = std::env::current_exe() {
+                    let _ = Command::new("tar")
+                        .args(["-xf", &self_exe.to_string_lossy(), "-C", &target_dir.to_string_lossy()])
+                        .output();
+                    if !target_dir.join("NXYVEN.exe").exists() && target_dir.join("concat.exe").exists() {
+                        let _ = std::fs::copy(target_dir.join("concat.exe"), target_dir.join("NXYVEN.exe"));
+                    }
                 }
             }
 
@@ -253,13 +283,10 @@ fn main() -> Result<(), slint::PlatformError> {
                 }
             }
 
-            if start_menu_shortcut {
-                if let Some(data_dir) = dirs::data_dir() {
-                    let programs = data_dir.join("Microsoft").join("Windows").join("Start Menu").join("Programs");
-                    let shortcut = programs.join("NXYVEN.lnk");
-                    let _ = create_shortcut(&exe_target, &shortcut, None);
-                }
-            }
+            // Refresh Windows Explorer shell icon cache so Start Menu and Desktop update immediately
+            let _ = Command::new("powershell")
+                .args(["-NoProfile", "-NonInteractive", "-Command", "ie4uinit.exe -show; [void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public class ShellRefresh { [DllImport(\"shell32.dll\")] public static extern void SHChangeNotify(int eventId, int flags, IntPtr item1, IntPtr item2); }'; [ShellRefresh]::SHChangeNotify(0x08000000, 0, [IntPtr]::Zero, [IntPtr]::Zero)"])
+                .output();
 
             // Step 5: Register Uninstaller in Windows Registry
             register_uninstaller(&target_dir, &exe_target);

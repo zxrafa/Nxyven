@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-// NXYVEN Installer Interface — Ultra-Modern Dark & Radiant Orange
+// NXYVEN Installer Interface — Sleek Minimalist Dark & Radiant Orange
 
-export component NxMark inherits Rectangle {
+component NxMark inherits Rectangle {
     in property <length> size: 28px;
     width: root.size;
     height: root.size;
@@ -20,26 +20,27 @@ export component NxMark inherits Rectangle {
     }
 }
 
-component IconButton inherits Rectangle {
+component WindowControlBtn inherits Rectangle {
     in property <string> text;
     in property <bool> danger: false;
     callback clicked();
 
-    width: 36px;
-    height: 30px;
-    border-radius: 4px;
-    background: touch.has-hover ? (root.danger ? #e11d4833 : #ffffff12) : Colors.transparent;
+    width: 38px;
+    height: 32px;
+    border-radius: 6px;
+    background: touch.has-hover ? (root.danger ? #e11d4833 : #ffffff14) : Colors.transparent;
     animate background { duration: 120ms; }
 
     Text {
         text: root.text;
         font-size: 13px;
-        color: touch.has-hover ? (root.danger ? #fb7185 : #ffffff) : #8e8e9a;
+        color: touch.has-hover ? (root.danger ? #fb7185 : #ffffff) : #8e8e9c;
         horizontal-alignment: center;
         vertical-alignment: center;
     }
 
     touch := TouchArea {
+        mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
 }
@@ -48,21 +49,21 @@ component ModernCheckbox inherits Rectangle {
     in-out property <bool> checked: true;
     in property <string> label;
 
-    height: 24px;
+    height: 28px;
     background: Colors.transparent;
 
     HorizontalLayout {
-        spacing: 10px;
+        spacing: 12px;
         alignment: start;
 
         box := Rectangle {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             y: (parent.height - self.height) / 2;
-            border-radius: 4px;
-            background: root.checked ? @linear-gradient(135deg, #FF4D00 0%, #FF6A24 100%) : #1c1c24;
+            border-radius: 5px;
+            background: root.checked ? @linear-gradient(135deg, #FF4D00 0%, #FF6A24 100%) : #181820;
             border-width: 1px;
-            border-color: root.checked ? #FF9A62 : (touch.has-hover ? #4a4a58 : #2e2e3a);
+            border-color: root.checked ? #FF9A62 : (touch.has-hover ? #525266 : #2e2e3c);
 
             animate background, border-color { duration: 140ms; }
 
@@ -71,7 +72,7 @@ component ModernCheckbox inherits Rectangle {
                 height: 100%;
                 commands: "M 4 9 L 7.5 12.5 L 14 5.5";
                 stroke: #ffffff;
-                stroke-width: 2px;
+                stroke-width: 2.2px;
                 viewbox-x: 0;
                 viewbox-y: 0;
                 viewbox-width: 18;
@@ -82,7 +83,7 @@ component ModernCheckbox inherits Rectangle {
         Text {
             text: root.label;
             font-size: 13px;
-            color: touch.has-hover ? #f4f4f6 : #a5a5b2;
+            color: touch.has-hover ? #f4f4f6 : #a5a5b6;
             vertical-alignment: center;
             animate color { duration: 120ms; }
         }
@@ -95,191 +96,223 @@ component ModernCheckbox inherits Rectangle {
 }
 
 export component InstallerWindow inherits Window {
-    title: "Instalador NXYVEN";
-    width: 620px;
-    height: 440px;
-    background: #0B0B0E;
+    title: "Instalador Oficial NXYVEN";
+    width: 500px;
+    height: 520px;
+    background: Colors.transparent;
     no-frame: true;
 
     in-out property <int> step: 0; // 0 = Setup, 1 = Installing, 2 = Completed
-    in-out property <string> install-path: "C:\\Program Files\\NXYVEN";
+    in-out property <string> install-path: "C:\\Users\\MANCER\\AppData\\Local\\Programs\\NXYVEN";
     in-out property <bool> create-desktop-shortcut: true;
     in-out property <bool> create-start-menu-shortcut: true;
     in-out property <float> progress: 0.0;
-    in-out property <string> status-text: "Pronto para instalar.";
-    in-out property <string> error-text: "";
+    in-out property <string> status-text: "Pronto para iniciar a instalação.";
 
     callback start-install();
     callback launch-app();
     callback close-window();
     callback minimize-window();
     callback choose-folder();
+    callback begin-drag();
 
-    // Subtle background mesh gradient
-    Rectangle {
-        x: 0;
-        y: 0;
-        width: parent.width;
-        height: 140px;
-        background: @linear-gradient(180deg, #FF4D0014 0%, #0B0B0E00 100%);
-    }
-
-    // Outer border
-    Rectangle {
-        x: 0;
-        y: 0;
+    // Main Card Frame with Rounded Corners
+    main-card := Rectangle {
         width: parent.width;
         height: parent.height;
+        background: #0D0D12;
+        border-radius: 16px;
         border-width: 1px;
-        border-color: #24242e;
-        border-radius: 10px;
+        border-color: #262634;
         clip: true;
 
+        // Subtle orange ambient glow in top corner
+        Rectangle {
+            x: 0;
+            y: 0;
+            width: parent.width;
+            height: 180px;
+            background: @linear-gradient(180deg, #FF4D0018 0%, #0D0D1200 100%);
+        }
+
         VerticalLayout {
-            // Header / Title bar
-            HorizontalLayout {
-                height: 44px;
-                padding-left: 18px;
-                padding-right: 8px;
-                padding-top: 6px;
-                spacing: 10px;
+            // Header Bar
+            Rectangle {
+                height: 48px;
+
+                TouchArea {
+                    width: parent.width - 95px;
+                    height: parent.height;
+                    pointer-event(event) => {
+                        if (event.kind == PointerEventKind.down && event.button == PointerEventButton.left) {
+                            root.begin-drag();
+                        }
+                    }
+                }
+
+                HorizontalLayout {
+                    width: parent.width;
+                    height: parent.height;
+                    padding-left: 20px;
+                    padding-right: 12px;
+                    padding-top: 8px;
+                    spacing: 12px;
+                padding-left: 20px;
+                padding-right: 12px;
+                padding-top: 8px;
+                spacing: 12px;
 
                 HorizontalLayout {
                     spacing: 10px;
                     alignment: start;
                     y: (parent.height - self.height) / 2;
 
-                    NxMark { size: 22px; }
+                    NxMark { size: 24px; }
 
                     Text {
                         text: "NXYVEN";
-                        font-size: 14px;
-                        font-weight: 700;
+                        font-size: 15px;
+                        font-weight: 800;
                         color: #ffffff;
-                        letter-spacing: 1.5px;
+                        letter-spacing: 1.8px;
                         vertical-alignment: center;
                     }
 
                     Rectangle {
                         width: 1px;
                         height: 14px;
-                        background: #2a2a36;
+                        background: #2b2b3a;
                         y: (parent.height - self.height) / 2;
                     }
 
-                    Text {
-                        text: "INSTALADOR OFICIAL";
-                        font-size: 10px;
-                        font-weight: 600;
-                        color: #FF9A62;
-                        letter-spacing: 1px;
-                        vertical-alignment: center;
+                    Rectangle {
+                        height: 20px;
+                        border-radius: 4px;
+                        background: #FF4D001f;
+                        border-width: 1px;
+                        border-color: #FF6A2444;
+                        y: (parent.height - self.height) / 2;
+
+                        Text {
+                            x: 8px;
+                            y: (parent.height - self.height) / 2;
+                            text: "v1.0.0 FINAL";
+                            font-size: 10px;
+                            font-weight: 700;
+                            color: #FF9A62;
+                            letter-spacing: 0.8px;
+                        }
                     }
                 }
 
                 Rectangle { horizontal-stretch: 1; }
 
                 HorizontalLayout {
-                    spacing: 2px;
+                    spacing: 4px;
                     alignment: end;
-                    IconButton {
+                    WindowControlBtn {
                         text: "—";
                         clicked => { root.minimize-window(); }
                     }
-                    IconButton {
+                    WindowControlBtn {
                         text: "✕";
                         danger: true;
                         clicked => { root.close-window(); }
                     }
                 }
             }
+        }
 
-            // Divider
+        // Divider Line
             Rectangle {
                 height: 1px;
-                background: #1d1d26;
+                background: #1e1e2a;
             }
 
-            // Main Content Area
+            // Body Container
             Rectangle {
                 vertical-stretch: 1;
-                padding: 24px;
 
-                // ── STEP 0: Configuration ────────────────────────────────
+                // ── STEP 0: Configuration Page ───────────────────────────
                 if root.step == 0: VerticalLayout {
+                    padding-left: 28px;
+                    padding-right: 28px;
+                    padding-top: 24px;
+                    padding-bottom: 24px;
                     spacing: 20px;
                     alignment: space-between;
 
                     VerticalLayout {
-                        spacing: 8px;
+                        spacing: 6px;
 
                         Text {
-                            text: "Instalação do NXYVEN Pro";
+                            text: "Bem-vindo ao NXYVEN Video Editor";
                             font-size: 22px;
                             font-weight: 700;
                             color: #f6f6f8;
+                            letter-spacing: -0.3px;
                         }
 
                         Text {
-                            text: "Editor de vídeo desktop profissional, com aceleração por GPU e engine nativa.";
+                            text: "Editor de vídeo comercial desktop com aceleração por GPU, inteligência de áudio e 127 shaders.";
                             font-size: 13px;
-                            color: #8c8c9a;
+                            color: #8a8a9a;
                         }
                     }
 
-                    // Directory Selection Box
+                    // Path Selector
                     VerticalLayout {
                         spacing: 8px;
 
                         Text {
-                            text: "PASTA DE INSTALAÇÃO";
+                            text: "LOCAL DE INSTALAÇÃO";
                             font-size: 11px;
-                            font-weight: 600;
-                            color: #a4a4b2;
+                            font-weight: 700;
+                            color: #9c9cb0;
                             letter-spacing: 0.8px;
                         }
 
                         HorizontalLayout {
-                            height: 40px;
+                            height: 42px;
                             spacing: 10px;
 
                             path-box := Rectangle {
                                 horizontal-stretch: 1;
-                                border-radius: 6px;
-                                background: #121217;
+                                border-radius: 8px;
+                                background: #13131a;
                                 border-width: 1px;
-                                border-color: path-input.has-focus ? #FF6A24 : #282834;
+                                border-color: path-input.has-focus ? #FF6A24 : #282838;
                                 animate border-color { duration: 140ms; }
 
                                 path-input := TextInput {
-                                    x: 12px;
+                                    x: 14px;
                                     y: (parent.height - self.height) / 2;
-                                    width: parent.width - 24px;
+                                    width: parent.width - 28px;
                                     text <=> root.install-path;
-                                    color: #ececf0;
+                                    color: #f0f0f4;
                                     font-size: 13px;
                                     single-line: true;
                                 }
                             }
 
-                            browse-btn := Rectangle {
-                                width: 90px;
-                                border-radius: 6px;
-                                background: browse-touch.has-hover ? #252530 : #1a1a22;
+                            reset-btn := Rectangle {
+                                width: 95px;
+                                border-radius: 8px;
+                                background: reset-touch.has-hover ? #252534 : #1a1a24;
                                 border-width: 1px;
-                                border-color: #30303e;
+                                border-color: #323244;
                                 animate background { duration: 120ms; }
 
                                 Text {
                                     text: "Padrão";
                                     font-size: 12px;
                                     font-weight: 600;
-                                    color: #e2e2e8;
+                                    color: #e4e4ec;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
                                 }
 
-                                browse-touch := TouchArea {
+                                reset-touch := TouchArea {
                                     mouse-cursor: pointer;
                                     clicked => { root.choose-folder(); }
                                 }
@@ -287,9 +320,9 @@ export component InstallerWindow inherits Window {
                         }
                     }
 
-                    // Options Checkboxes
+                    // Shortcut Checkboxes
                     VerticalLayout {
-                        spacing: 10px;
+                        spacing: 12px;
 
                         ModernCheckbox {
                             label: "Criar atalho na Área de Trabalho (Desktop)";
@@ -297,29 +330,29 @@ export component InstallerWindow inherits Window {
                         }
 
                         ModernCheckbox {
-                            label: "Adicionar ao Menu Iniciar do Windows";
+                            label: "Adicionar atalho ao Menu Iniciar do Windows";
                             checked <=> root.create-start-menu-shortcut;
                         }
                     }
 
-                    // Footer Buttons
+                    // Action Buttons
                     HorizontalLayout {
                         spacing: 12px;
                         alignment: end;
 
                         cancel-btn := Rectangle {
-                            width: 110px;
-                            height: 38px;
-                            border-radius: 6px;
-                            background: cancel-touch.has-hover ? #1f1f28 : Colors.transparent;
+                            width: 115px;
+                            height: 40px;
+                            border-radius: 8px;
+                            background: cancel-touch.has-hover ? #1f1f2c : Colors.transparent;
                             border-width: 1px;
-                            border-color: #2e2e3a;
+                            border-color: #2c2c3c;
 
                             Text {
                                 text: "Cancelar";
                                 font-size: 13px;
-                                font-weight: 500;
-                                color: #a0a0b0;
+                                font-weight: 600;
+                                color: #9c9cb0;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -331,9 +364,9 @@ export component InstallerWindow inherits Window {
                         }
 
                         install-btn := Rectangle {
-                            width: 160px;
-                            height: 38px;
-                            border-radius: 6px;
+                            width: 175px;
+                            height: 40px;
+                            border-radius: 8px;
                             background: install-touch.has-hover
                                 ? @linear-gradient(135deg, #FF5E1A 0%, #FF7B3D 50%, #FFA875 100%)
                                 : @linear-gradient(135deg, #FF4D00 0%, #FF6A24 50%, #FF9A62 100%);
@@ -357,23 +390,27 @@ export component InstallerWindow inherits Window {
                     }
                 }
 
-                // ── STEP 1: Installing Progress ──────────────────────────
+                // ── STEP 1: Progress Page ────────────────────────────────
                 if root.step == 1: VerticalLayout {
-                    spacing: 24px;
+                    padding-left: 28px;
+                    padding-right: 28px;
+                    padding-top: 24px;
+                    padding-bottom: 24px;
+                    spacing: 26px;
                     alignment: center;
 
                     VerticalLayout {
-                        spacing: 10px;
+                        spacing: 12px;
                         alignment: center;
 
                         NxMark {
-                            size: 56px;
+                            size: 60px;
                             x: (parent.width - self.width) / 2;
                         }
 
                         Text {
                             text: "Instalando NXYVEN…";
-                            font-size: 20px;
+                            font-size: 22px;
                             font-weight: 700;
                             color: #f6f6f8;
                             horizontal-alignment: center;
@@ -382,23 +419,23 @@ export component InstallerWindow inherits Window {
                         Text {
                             text: root.status-text;
                             font-size: 13px;
-                            color: #a4a4b2;
+                            color: #9c9cb0;
                             horizontal-alignment: center;
                         }
                     }
 
-                    // Progress Bar Container
+                    // Progress Bar
                     VerticalLayout {
                         spacing: 8px;
-                        width: parent.width * 0.85;
+                        width: parent.width * 0.88;
                         x: (parent.width - self.width) / 2;
 
                         Rectangle {
                             height: 8px;
                             border-radius: 4px;
-                            background: #181820;
+                            background: #181822;
                             border-width: 1px;
-                            border-color: #292936;
+                            border-color: #2c2c3e;
                             clip: true;
 
                             Rectangle {
@@ -414,32 +451,36 @@ export component InstallerWindow inherits Window {
 
                         HorizontalLayout {
                             Text {
-                                text: "Aguarde a extração e registro dos componentes...";
+                                text: "Extraindo arquivos, registrando codecs e atalhos...";
                                 font-size: 11px;
-                                color: #6e6e7c;
+                                color: #6a6a7c;
                             }
                             Rectangle { horizontal-stretch: 1; }
                             Text {
                                 text: Math.round(root.progress * 100) + "%";
-                                font-size: 11px;
-                                font-weight: 600;
+                                font-size: 12px;
+                                font-weight: 700;
                                 color: #FF9A62;
                             }
                         }
                     }
                 }
 
-                // ── STEP 2: Completed ────────────────────────────────────
+                // ── STEP 2: Completed Page ───────────────────────────────
                 if root.step == 2: VerticalLayout {
-                    spacing: 24px;
+                    padding-left: 28px;
+                    padding-right: 28px;
+                    padding-top: 24px;
+                    padding-bottom: 24px;
+                    spacing: 26px;
                     alignment: center;
 
-                    // Success icon
+                    // Radiant Success Checkmark
                     Rectangle {
-                        width: 64px;
-                        height: 64px;
+                        width: 68px;
+                        height: 68px;
                         x: (parent.width - self.width) / 2;
-                        border-radius: 32px;
+                        border-radius: 34px;
                         background: @linear-gradient(135deg, #FF4D0022 0%, #FF6A2444 100%);
                         border-width: 2px;
                         border-color: #FF6A24;
@@ -449,7 +490,7 @@ export component InstallerWindow inherits Window {
                             height: 100%;
                             commands: "M 6 12 L 10 16 L 18 8";
                             stroke: #FF9A62;
-                            stroke-width: 3px;
+                            stroke-width: 3.2px;
                             viewbox-x: 0;
                             viewbox-y: 0;
                             viewbox-width: 24;
@@ -463,38 +504,38 @@ export component InstallerWindow inherits Window {
 
                         Text {
                             text: "Instalação Concluída!";
-                            font-size: 22px;
+                            font-size: 24px;
                             font-weight: 700;
                             color: #f6f6f8;
                             horizontal-alignment: center;
                         }
 
                         Text {
-                            text: "O NXYVEN v1.0.0 foi instalado e registrado com sucesso.";
+                            text: "O NXYVEN Pro v1.0.0 está instalado e pronto para uso.";
                             font-size: 13px;
-                            color: #9292a0;
+                            color: #9292a4;
                             horizontal-alignment: center;
                         }
                     }
 
-                    // Completed Actions
+                    // Completion Actions
                     HorizontalLayout {
                         spacing: 14px;
                         alignment: center;
 
                         finish-btn := Rectangle {
-                            width: 120px;
-                            height: 40px;
-                            border-radius: 6px;
-                            background: finish-touch.has-hover ? #22222c : #181820;
+                            width: 125px;
+                            height: 42px;
+                            border-radius: 8px;
+                            background: finish-touch.has-hover ? #222230 : #191924;
                             border-width: 1px;
-                            border-color: #323242;
+                            border-color: #323246;
 
                             Text {
-                                text: "Concluir";
+                                text: "Fechar";
                                 font-size: 13px;
                                 font-weight: 600;
-                                color: #d4d4dc;
+                                color: #d0d0dc;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
@@ -506,9 +547,9 @@ export component InstallerWindow inherits Window {
                         }
 
                         launch-btn := Rectangle {
-                            width: 170px;
-                            height: 40px;
-                            border-radius: 6px;
+                            width: 180px;
+                            height: 42px;
+                            border-radius: 8px;
                             background: launch-touch.has-hover
                                 ? @linear-gradient(135deg, #FF5E1A 0%, #FF7B3D 50%, #FFA875 100%)
                                 : @linear-gradient(135deg, #FF4D00 0%, #FF6A24 50%, #FF9A62 100%);
