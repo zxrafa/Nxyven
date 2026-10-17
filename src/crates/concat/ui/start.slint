@@ -5,7 +5,7 @@ import { I18n } from "i18n.slint";
 import { Theme } from "theme/theme.slint";
 import { CopyChip, Modal } from "primitives/modal.slint";
 import { FocusRing } from "primitives/focus-ring.slint";
-import { Glyph, Icon } from "icons.slint";
+import { Glyph, Icon, NxMark } from "icons.slint";
 import { ThinScrollbar } from "primitives/scrollbar.slint";
 import { Tip } from "primitives/tooltip.slint";
 import { Focus } from "util.slint";
@@ -729,7 +729,25 @@ component Rail inherits Rectangle {
         padding: root.compact ? 10px : 12px;
         padding-top: 14px;
         padding-bottom: 14px;
-        spacing: 4px;
+        spacing: 12px;
+
+        // NXYVEN Brand insignia at head of rail
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: root.compact ? LayoutAlignment.center : LayoutAlignment.start;
+            padding-left: root.compact ? 0px : 4px;
+            NxMark { size: 20px; }
+            if !root.compact: VerticalLayout {
+                alignment: center;
+                Text {
+                    text: "NXYVEN";
+                    color: Theme.fg;
+                    font-size: 13px;
+                    font-weight: 700;
+                    letter-spacing: 1.2px;
+                }
+            }
+        }
 
         // The same verb as the card at the head of the grid, for whoever
         // reads the rail first: a launcher's first row is where "new" is

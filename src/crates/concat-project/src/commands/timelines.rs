@@ -29,7 +29,7 @@ pub(super) fn apply(
                     id: mint.next("t"),
                     visible: true,
                     muted: false,
-                    extra: Default::default(),
+                    ..Track::default()
                 })
                 .collect();
             // Born at the frame of the timeline you were looking at: the
@@ -42,7 +42,7 @@ pub(super) fn apply(
                 video,
                 tracks,
                 clips: Vec::new(),
-                extra: Default::default(),
+                ..Timeline::default()
             }));
             project.active_timeline_id = id.clone();
             Ok(Outcome {

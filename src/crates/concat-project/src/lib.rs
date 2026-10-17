@@ -21,12 +21,17 @@
 //! document model needs serde, and concat-core's zero-dependency rule is worth
 //! more than the adjacency.
 
+pub mod audio_tools;
 pub mod commands;
 pub mod doc;
+pub mod drift_import;
 pub mod editor;
 pub mod model;
 pub mod placement;
 pub mod speed;
+pub mod speed_presets;
+pub mod subtitles;
+pub mod text_presets;
 
 pub use commands::{Command, CommandError, Outcome, consolidation_clips, why_not_merge};
 pub use doc::{DOCUMENT_VERSION, DocumentSettings, document_version, from_document, to_document};

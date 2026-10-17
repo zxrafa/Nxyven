@@ -98,8 +98,10 @@ unsafe extern "C" fn relay(
     if text.is_empty() {
         return;
     }
-    if level <= ffmpeg::sys::AV_LOG_FATAL {
+    if level <= ffmpeg::sys::AV_LOG_ERROR {
         log::error!(target: "ffmpeg", "{text}");
+    } else if level <= ffmpeg::sys::AV_LOG_WARNING {
+        log::warn!(target: "ffmpeg", "{text}");
     } else {
         log::debug!(target: "ffmpeg", "{text}");
     }

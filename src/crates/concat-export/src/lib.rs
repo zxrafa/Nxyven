@@ -804,6 +804,7 @@ fn overlap(clips: &mut Vec<ExportClip>, cut: &Cut, frame: f64) -> Option<Overlap
     }
     let tail = length - lead;
     let a_track = a.track;
+    let base_track = a_track & !1;
     let a_end = a.start + a.duration;
     let outgoing_runs = tail_handle(a, frame) + frame / 2.0 >= tail;
 
@@ -813,7 +814,10 @@ fn overlap(clips: &mut Vec<ExportClip>, cut: &Cut, frame: f64) -> Option<Overlap
         // Sound rides the picture: each side fades across the overlap
         // rather than arriving or leaving at full level.
         b.fade_in = b.fade_in.max(length);
-        b.track = a_track + 1;
+        b.track = base_track + 1;
+    }
+    if a_track != base_track {
+        clips[cut.outgoing].track = base_track;
     }
     if outgoing_runs {
         let a = &mut clips[cut.outgoing];
@@ -1766,6 +1770,14 @@ impl Compositor for EffectClock<'_> {
             to,
             pass,
         )
+    }
+
+    fn deliver_hdr(&mut self, on: bool) {
+        self.inner.deliver_hdr(on);
+    }
+
+    fn lost(&self) -> bool {
+        self.inner.lost()
     }
 }
 
@@ -3401,4 +3413,20 @@ mod tests {
         assert_eq!(clips[1].start, 2.0);
         assert!(clips[1].transition_shapes.is_empty());
     }
+
+    #[test]
+    fn chained_transitions_stay_within_doubled_lane_pair() {
+        let mut clips = vec![
+            clip("video", 0, 0.0, 2.0, 0.0),
+            clip("video", 0, 2.0, 2.0, 0.0),
+            clip("video", 0, 4.0, 2.0, 0.0),
+        ];
+        clips[1].transition = spec("cross-fade", 0.5);
+        clips[2].transition = spec("cross-fade", 0.5);
+        resolve_transitions(&mut clips, FrameRate::THIRTY);
+        for c in &clips {
+            assert!(c.track <= 1, "clip {} climbed to track {}", c.path, c.track);
+        }
+    }
 }
+

@@ -1515,8 +1515,14 @@ fn start(project: Option<std::path::PathBuf>, smoke: bool) -> Result<(), slint::
                 #[cfg(target_os = "android")]
                 let system = 1.0;
                 let factor = percent.map_or(system as f32, |percent| {
-                    prefs::Preferences::scale_factor(percent) as f32
+                    (system * prefs::Preferences::scale_factor(percent)) as f32
                 });
+                unsafe {
+                    match percent {
+                        Some(_) => std::env::set_var("SLINT_SCALE_FACTOR", factor.to_string()),
+                        None => std::env::remove_var("SLINT_SCALE_FACTOR"),
+                    }
+                }
                 let physical = window.size();
                 window.dispatch_event(slint::platform::WindowEvent::ScaleFactorChanged {
                     scale_factor: factor,

@@ -77,7 +77,7 @@ pub(super) fn apply(
                                 id: id.clone(),
                                 visible: true,
                                 muted: false,
-                                extra: Default::default(),
+                                ..Track::default()
                             });
                             id
                         }

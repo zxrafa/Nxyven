@@ -332,7 +332,13 @@ mod tests {
     fn built_in_ids_are_namespaced_and_bare_aliases_still_resolve() {
         let catalogue = Catalogue::builtin();
         for package in catalogue.packages() {
-            assert!(package.id().starts_with("concat."), "{}", package.id());
+            assert!(
+                package.id().starts_with("concat.")
+                    || package.id().starts_with("nxyven.")
+                    || package.id().starts_with("lab."),
+                "{}",
+                package.id()
+            );
         }
         assert_eq!(catalogue.get("glow").map(Package::id), Some("concat.glow"));
         assert_eq!(

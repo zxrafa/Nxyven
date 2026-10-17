@@ -275,7 +275,13 @@ impl AudioDecoder {
                         }
                         match self.decoder.send_packet(&packet) {
                             Ok(()) => break,
-                            Err(error) if ffi::is_again(&error) => break,
+                            Err(error) if ffi::is_again(&error) => {
+                                let mut drained = Audio::empty();
+                                if self.decoder.receive_frame(&mut drained).is_ok() {
+                                    let _ = self.decoder.send_packet(&packet);
+                                }
+                                break;
+                            }
                             Err(error) => return Err(ffi::fail("send packet", &self.path, error)),
                         }
                     }

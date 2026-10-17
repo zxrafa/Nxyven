@@ -40,6 +40,8 @@ pub fn flatten_timeline_in(
         return Vec::new();
     };
 
+    let any_solo = timeline.tracks.iter().any(|track| track.solo);
+
     timeline
         .clips
         .iter()
@@ -87,11 +89,26 @@ pub fn flatten_timeline_in(
                 color_range: media.color_range,
                 source_start: clip.source_start,
                 hidden: !track.visible,
-                muted: track.muted || clip.muted == Some(true),
+                muted: (any_solo && !track.solo) || track.muted || clip.muted == Some(true),
                 volume: export_base(clip, KeyProperty::Volume),
                 fade_in: clip.fade_in,
                 fade_out: clip.fade_out,
-                filter_chain: audio_filter_chain(&clip.filters),
+                filter_chain: {
+                    let mut chain = audio_filter_chain(&clip.filters);
+                    let pan: f64 = clip.pan;
+                    if pan.abs() > 0.001 {
+                        let l_gain: f64 = ((1.0 - pan) * 0.5).clamp(0.0, 1.0);
+                        let r_gain: f64 = ((1.0 + pan) * 0.5).clamp(0.0, 1.0);
+                        let pan_filter = format!("pan=stereo|c0={l_gain:.3}*c0|c1={r_gain:.3}*c1");
+                        if chain.is_empty() {
+                            chain = pan_filter;
+                        } else {
+                            chain.push(',');
+                            chain.push_str(&pan_filter);
+                        }
+                    }
+                    chain
+                },
                 speed: clip.speed,
                 preserve_pitch: clip.preserve_pitch,
                 speed_curve: clip
@@ -340,4 +357,39 @@ mod tests {
         assert!(flatten_timeline(editor.project(), None).is_empty());
         assert!(flatten_timeline(editor.project(), Some("nope")).len() <= 1);
     }
+
+    #[test]
+    fn solo_track_mutes_other_tracks_and_stereo_pan_is_flattened() {
+        let (mut editor, media_id, clip_id) = project_with_clip();
+        // Add a second track and clip
+        let second_track_id = editor.project().timelines[0].tracks[1].id.clone();
+        let _ = editor
+            .apply(Command::AddClip {
+                track_id: second_track_id,
+                media_id,
+                start: 0.0,
+                ripple: false,
+            })
+            .expect("adds second clip");
+
+        let mut doc = editor.project().clone();
+        let timeline = std::sync::Arc::make_mut(&mut doc.timelines[0]);
+        let first = std::sync::Arc::make_mut(timeline.clips.iter_mut().find(|c| c.id == clip_id).unwrap());
+        first.pan = 0.5;
+        timeline.tracks[0].solo = true;
+
+        let flat = flatten_timeline(&doc, None);
+        assert_eq!(flat.len(), 2);
+        let first_flat = flat.iter().find(|c| c.start == 1.0).unwrap();
+        let second_flat = flat.iter().find(|c| c.start == 0.0).unwrap();
+
+        assert!(!first_flat.muted, "solo track is not muted");
+        assert!(second_flat.muted, "non-solo track is muted by solo");
+        assert!(
+            first_flat.filter_chain.contains("pan=stereo|c0=0.250*c0|c1=0.750*c1"),
+            "filter chain: {}",
+            first_flat.filter_chain
+        );
+    }
 }
+

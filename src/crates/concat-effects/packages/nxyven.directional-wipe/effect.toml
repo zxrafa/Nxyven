@@ -1,0 +1,32 @@
+format = 2
+
+[effect]
+id = "nxyven.directional-wipe"
+name = "Directional Wipe"
+kind = "transition"
+category = "Wipe"
+shelves = ["Wipes"]
+order = 28
+description = "Arbitrary-angle angled wipe with feathered edge ported from Drift."
+
+[[param]]
+key = "angle"
+label = "Angle"
+min = 0
+max = 360
+default = 45
+step = 1
+unit = "deg"
+
+[[param]]
+key = "feather"
+label = "Feather"
+min = 0
+max = 100
+default = 20
+step = 1
+unit = "%"
+
+[transition]
+entry = "effect.wgsl"
+fallback = "cross-fade"

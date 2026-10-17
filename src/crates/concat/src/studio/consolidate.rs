@@ -81,6 +81,16 @@ impl Studio {
         let Some(session) = self.session.as_ref() else {
             return;
         };
+        if concat_project::why_not_merge(session.project(), &self.selection).is_none() {
+            let clip_ids = self.selection.clone();
+            if let Some(merged_id) = self.apply(Command::MergeClips { clip_ids }) {
+                self.selection = vec![merged_id];
+                return;
+            }
+        }
+        let Some(session) = self.session.as_ref() else {
+            return;
+        };
         let plan = match Consolidation::new(session.project(), &self.selection) {
             Ok(plan) => plan,
             Err(error) => {

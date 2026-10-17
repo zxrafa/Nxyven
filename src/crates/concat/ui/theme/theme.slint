@@ -69,7 +69,9 @@ export global Theme {
     /// name is the English word Settings shows for it, and the id it is
     /// remembered under in settings.json, lower-cased; the dialog holds the
     /// same list wrapped for translation, in this order.
-    out property <[string]> accent-names: ["Lime", "Sky", "Violet", "Rose", "Amber", "Mint"];
+    out property <[string]> accent-names: ["Orange", "Sky", "Violet", "Rose", "Amber", "Mint"];
+    /// NXYVEN signature warm orange gradient for highlights and key actions
+    out property <brush> brand-gradient: @linear-gradient(135deg, #ff4d00 0%, #ff6a24 50%, #ff9a62 100%);
     /// The playhead's colour when one was picked by hand in Settings >
     /// Appearance, in place of the palette's own. Read only while
     /// `playhead-is-custom`, and one colour under both palettes, for the

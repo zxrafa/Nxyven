@@ -19,13 +19,17 @@
 pub mod animate;
 pub mod arena;
 pub mod frame;
+pub mod mask;
 pub mod retime;
+pub mod scopes;
 pub mod shader;
 pub mod time;
 pub mod timeline;
 
 pub use frame::Frame;
+pub use mask::{MaskShape, MaskSpec, apply_masks};
 pub use retime::SpeedCurve;
+pub use scopes::{Histogram, Vectorscope, WaveformScope, compute_histogram, compute_vectorscope, compute_waveform};
 pub use shader::{Lut, RevealMap, ShaderPass, Stage, TransitionPass};
 pub use time::{FrameRate, Rational, TimeRange};
 pub use timeline::{Blend, Clip, ClipId, Project, Timeline, Track, TrackId, TrackKind};

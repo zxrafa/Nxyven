@@ -21,6 +21,7 @@ use crate::model::{
 mod audio;
 mod clips;
 pub use clips::{consolidation_clips, why_not_merge};
+pub mod edit_pro;
 mod media;
 mod properties;
 mod timelines;
@@ -61,6 +62,10 @@ pub enum TrackFlag {
     Visible,
     /// [`Track::muted`]: whether the track's audio is silenced.
     Muted,
+    /// [`Track::locked`]: whether edits to clips on this track are blocked.
+    Locked,
+    /// [`Track::solo`]: whether this track solos its audio over non-solo tracks.
+    Solo,
 }
 
 /// Where one clip is going, in a multi-clip move.

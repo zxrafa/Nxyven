@@ -6808,21 +6808,30 @@ impl Studio {
             return;
         }
         sources.sort_by(|left, right| right.start.total_cmp(&left.start));
-        let mut last = None;
+        let mut created = Vec::new();
         for source in &sources {
-            self.duplicate(source);
-            last = self.selection.first().cloned();
+            let end = source.start + source.duration;
+            let track_id = source.track_id.clone();
+            if let Some(id) = self.place_copy(source, &track_id, end, Some("duplicate")) {
+                created.push(id);
+            }
         }
-        if let Some(id) = last {
+        if let Some(session) = self.session.as_mut() {
+            session.end_gesture();
+        }
+        if let Some(id) = created.last().cloned() {
             self.selection = vec![id];
         }
     }
 
-    /// A copy of `source` laid right after it on its own lane, selected.
+    /// A copy of `source` laid right after it on its own lane, selected, as one undo step.
     pub fn duplicate(&mut self, source: &Clip) {
         let end = source.start + source.duration;
         let track_id = source.track_id.clone();
-        if let Some(created) = self.place_copy(source, &track_id, end, None) {
+        if let Some(created) = self.place_copy(source, &track_id, end, Some("duplicate")) {
+            if let Some(session) = self.session.as_mut() {
+                session.end_gesture();
+            }
             self.selection = vec![created];
         }
     }

@@ -22,7 +22,7 @@ pub(super) fn apply(
                 id: id.clone(),
                 visible: true,
                 muted: false,
-                extra: Default::default(),
+                ..Track::default()
             };
             // The stack is stored bottom first: the last track is the lane
             // drawn on top.
@@ -67,6 +67,8 @@ pub(super) fn apply(
                 .is_some_and(|track| match flag {
                     TrackFlag::Visible => assign(&mut track.visible, value),
                     TrackFlag::Muted => assign(&mut track.muted, value),
+                    TrackFlag::Locked => assign(&mut track.locked, value),
+                    TrackFlag::Solo => assign(&mut track.solo, value),
                 });
             Ok(Outcome {
                 created_id: None,

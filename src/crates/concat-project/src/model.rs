@@ -200,8 +200,103 @@ fn is_unity(value: &f64) -> bool {
     *value == 1.0
 }
 
+fn is_zero(value: &f64) -> bool {
+    *value == 0.0
+}
+
 fn is_false(value: &bool) -> bool {
     !value
+}
+
+/// A folder in the project media bin for hierarchical asset organization.
+#[derive(Clone, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct MediaFolder {
+    /// Stable folder id (e.g. `"fld1"`).
+    pub id: String,
+    /// Display name.
+    pub name: String,
+    /// Optional parent folder id (`None` for root-level folders).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_id: Option<String>,
+}
+
+/// A marker or chapter span placed on a [`Timeline`].
+#[derive(Clone, PartialEq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct TimelineMarker {
+    /// Stable marker id (e.g. `"mk1"`).
+    pub id: String,
+    /// Timeline position in seconds.
+    pub at: f64,
+    /// Optional span duration in seconds (`0.0` for point markers).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub duration: f64,
+    /// Label text.
+    pub name: String,
+    /// Hex color tag (e.g. `"#FF6A24"`).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub color: String,
+}
+
+/// Geometric shape kind for a [`ClipMask`].
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ClipMaskKind {
+    /// Axis-aligned / rounded rectangle mask.
+    #[default]
+    Rectangle,
+    /// Elliptical / circular mask.
+    Ellipse,
+    /// Freeform polygon mask defined by `points`.
+    Polygon,
+}
+
+/// One parametric or polygonal mask applied to a [`Clip`].
+#[derive(Clone, PartialEq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
+pub struct ClipMask {
+    /// Shape kind.
+    pub kind: ClipMaskKind,
+    /// Normalized center X (`0.0..=1.0`).
+    pub center_x: f64,
+    /// Normalized center Y (`0.0..=1.0`).
+    pub center_y: f64,
+    /// Normalized width (`0.0..=2.0`).
+    pub width: f64,
+    /// Normalized height (`0.0..=2.0`).
+    pub height: f64,
+    /// Rotation in degrees.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub rotation: f64,
+    /// Corner radius (`0.0..=1.0`) for rectangle masks.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub corner_radius: f64,
+    /// Edge feather radius (`0.0..=0.5`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub feather: f64,
+    /// Mask expansion/choke (`-0.5..=0.5`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub expansion: f64,
+    /// Invert mask alpha when true.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub invert: bool,
+    /// Mask strength (`0.0..=1.0`).
+    #[serde(default = "unity", skip_serializing_if = "is_unity")]
+    pub opacity: f64,
+    /// Normalized polygon vertices `[x, y]` when `kind == ClipMaskKind::Polygon`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub points: Vec<[f64; 2]>,
+}
+
+/// A half-open time interval `[start, end)` in seconds (used by silence/scene analysis).
+#[derive(Clone, Copy, PartialEq, Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TimeRangeSpan {
+    /// Start timestamp in seconds.
+    pub start: f64,
+    /// End timestamp in seconds.
+    pub end: f64,
 }
 
 /// A lane. Deliberately untyped: any media goes on any track.
@@ -215,6 +310,18 @@ pub struct Track {
     pub visible: bool,
     /// Audio on this track is silent when true.
     pub muted: bool,
+    /// Optional custom track label (empty uses numbered default).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub name: String,
+    /// When true, clips on this track cannot be moved, trimmed, split, or modified.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub locked: bool,
+    /// When any track on a timeline has `solo == true`, non-solo tracks are muted.
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub solo: bool,
+    /// Custom lane height multiplier (`1.0` default).
+    #[serde(default = "unity", skip_serializing_if = "is_unity")]
+    pub height: f64,
     /// Fields this build does not know, kept so they round-trip.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Map<String, Value>,
@@ -226,6 +333,10 @@ impl Default for Track {
             id: String::new(),
             visible: true,
             muted: false,
+            name: String::new(),
+            locked: false,
+            solo: false,
+            height: 1.0,
             extra: Map::new(),
         }
     }
@@ -1365,6 +1476,31 @@ pub struct Clip {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     #[serde(deserialize_with = "wire::maybe")]
     pub shape: Option<ShapeStyle>,
+    /// Stereo pan balance in `-1.0..=1.0` (`-1.0` full left, `0.0` center, `+1.0` full right).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub pan: f64,
+    /// Shared link group id for linked clips that move/trim together.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub link_id: Option<String>,
+    /// Parametric & polygon masks applied to this clip.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(deserialize_with = "wire::list")]
+    pub masks: Vec<ClipMask>,
+    /// Transform anchor X offset from center (`0.0` is center).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub anchor_x: f64,
+    /// Transform anchor Y offset from center (`0.0` is center).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub anchor_y: f64,
+    /// 3D pitch tilt in degrees (`-85.0..=85.0`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub tilt_x: f64,
+    /// 3D yaw tilt in degrees (`-85.0..=85.0`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub tilt_y: f64,
+    /// 3D perspective strength (`0.0..=2.0`).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub perspective: f64,
     /// Fields this build does not know, kept so a document written by a
     /// newer or a different build round-trips through this one intact.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
@@ -1461,6 +1597,14 @@ impl Clip {
             enhanced: None,
             text: None,
             shape: None,
+            pan: 0.0,
+            link_id: None,
+            masks: Vec::new(),
+            anchor_x: 0.0,
+            anchor_y: 0.0,
+            tilt_x: 0.0,
+            tilt_y: 0.0,
+            perspective: 0.0,
             extra: Map::new(),
         }
     }
@@ -1813,6 +1957,14 @@ pub struct Timeline {
     /// [`Timeline::clip_mut`]). Reading through the `Arc` is transparent.
     #[serde(deserialize_with = "wire::list")]
     pub clips: Vec<Arc<Clip>>,
+    /// Timeline markers and chapter spans.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(deserialize_with = "wire::list")]
+    pub markers: Vec<TimelineMarker>,
+    /// Dedicated subtitle cues on this timeline.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(deserialize_with = "wire::list")]
+    pub subtitles: Vec<crate::subtitles::SubtitleCue>,
     /// Fields this build does not know, kept so they round-trip.
     #[serde(flatten, default, skip_serializing_if = "Map::is_empty")]
     pub extra: Map<String, Value>,
@@ -1826,6 +1978,8 @@ impl Default for Timeline {
             video: VideoSettings::default(),
             tracks: Vec::new(),
             clips: Vec::new(),
+            markers: Vec::new(),
+            subtitles: Vec::new(),
             extra: Map::new(),
         }
     }
@@ -1989,6 +2143,9 @@ pub struct Project {
     /// The bin: every imported file, shared by all timelines.
     #[serde(default, deserialize_with = "wire::list")]
     pub media: Vec<MediaItem>,
+    /// Hierarchical media bin folders.
+    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "wire::list")]
+    pub folders: Vec<MediaFolder>,
     /// Fonts the user added from disk, available to every title.
     #[serde(default, deserialize_with = "wire::list")]
     pub fonts: Vec<CustomFont>,
@@ -2029,6 +2186,7 @@ impl Project {
     pub fn with_video(video: VideoSettings) -> Self {
         Self {
             media: Vec::new(),
+            folders: Vec::new(),
             fonts: Vec::new(),
             extra: Map::new(),
             timelines: vec![Arc::new(Timeline {
@@ -2042,6 +2200,8 @@ impl Project {
                     })
                     .collect(),
                 clips: Vec::new(),
+                markers: Vec::new(),
+                subtitles: Vec::new(),
                 extra: Map::new(),
             })],
             active_timeline_id: "TL1".to_owned(),
@@ -2160,6 +2320,18 @@ impl Timeline {
     /// The track with this id, or None if it was removed.
     pub fn track(&self, track_id: &str) -> Option<&Track> {
         self.tracks.iter().find(|track| track.id == track_id)
+    }
+
+    /// Mutable reference to the track with `track_id`.
+    pub fn track_mut(&mut self, track_id: &str) -> Option<&mut Track> {
+        self.tracks.iter_mut().find(|track| track.id == track_id)
+    }
+
+    /// Returns `true` if `clip_id` sits on a track that has `locked == true`.
+    pub fn track_is_locked_for_clip(&self, clip_id: &str) -> bool {
+        self.clip(clip_id)
+            .and_then(|clip| self.track(&clip.track_id))
+            .is_some_and(|track| track.locked)
     }
 
     /// Where the last clip ends. Zero for an empty timeline.

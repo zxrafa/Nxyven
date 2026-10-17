@@ -1,0 +1,40 @@
+format = 2
+
+[effect]
+id = "nxyven.crt-scanlines"
+name = "CRT Scanlines"
+kind = "effect"
+category = "Retro"
+shelves = ["Retro & Film"]
+order = 70
+description = "Cathode ray tube scanline raster and phosphor display effect ported from Drift."
+
+[[param]]
+key = "density"
+label = "Density"
+type = "int"
+min = 10
+max = 200
+default = 80
+step = 1
+
+[[param]]
+key = "darkness"
+label = "Scanline Darkness"
+min = 0
+max = 100
+default = 35
+step = 1
+unit = "%"
+
+[[param]]
+key = "curvature"
+label = "Curvature"
+min = 0
+max = 50
+default = 10
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"

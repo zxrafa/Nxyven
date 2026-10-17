@@ -3,7 +3,7 @@
 
 import { I18n } from "i18n.slint";
 import { Theme } from "theme/theme.slint";
-import { Glyph, Icon } from "icons.slint";
+import { Glyph, Icon, NxMark } from "icons.slint";
 import { AddPaneButton, PaneKind } from "workspace/pane-switcher.slint";
 
 // The custom title bar.
@@ -199,9 +199,12 @@ export component TitleBar inherits Rectangle {
         padding-right: root.own-buttons ? 0px : 8px;
         spacing: 2px;
 
-        // No mark and no wordmark: the strip opens on the menus. A window
-        // does not need to say whose it is on every frame, and the launch
-        // screen's heading already carries the name where it means something.
+        // NXYVEN NX brand mark
+        if !root.minimal: VerticalLayout {
+            alignment: center;
+            padding-right: 4px;
+            NxMark { size: 16px; }
+        }
 
         // Each label reports its own position rather than a fixed one: they
         // are sized from their text, so where "View" starts depends on how

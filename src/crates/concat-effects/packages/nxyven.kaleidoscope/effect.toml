@@ -1,0 +1,40 @@
+format = 2
+
+[effect]
+id = "nxyven.kaleidoscope"
+name = "Kaleidoscope"
+kind = "effect"
+category = "Distort"
+shelves = ["Distortion & Glitch"]
+order = 60
+description = "Symmetrical kaleidoscopic reflection pattern ported from Drift."
+
+[[param]]
+key = "segments"
+label = "Segments"
+type = "int"
+min = 2
+max = 16
+default = 6
+step = 1
+
+[[param]]
+key = "rotation"
+label = "Rotation"
+min = 0
+max = 100
+default = 0
+step = 1
+unit = "%"
+
+[[param]]
+key = "zoom"
+label = "Zoom"
+min = 20
+max = 200
+default = 100
+step = 1
+unit = "%"
+
+[wgsl]
+entry = "effect.wgsl"

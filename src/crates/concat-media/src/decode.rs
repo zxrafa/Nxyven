@@ -894,7 +894,13 @@ impl Decoder {
                         }
                         match self.decoder.send_packet(&packet) {
                             Ok(()) => break,
-                            Err(error) if ffi::is_again(&error) => break,
+                            Err(error) if ffi::is_again(&error) => {
+                                let mut drained = Video::empty();
+                                if self.decoder.receive_frame(&mut drained).is_ok() {
+                                    let _ = self.decoder.send_packet(&packet);
+                                }
+                                break;
+                            }
                             Err(error) if self.hardware.is_some() => {
                                 let (device, _) = self.hardware.take().expect("checked");
                                 hardware::note_fallback(

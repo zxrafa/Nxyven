@@ -115,23 +115,29 @@ pub(crate) fn serve_tcp(
             let Ok(timer) = stream.try_clone() else {
                 continue;
             };
-            if let Ok(mut connections) = connections.lock() {
-                connections.push(Box::new(move || {
-                    let _ = closer.shutdown(std::net::Shutdown::Both);
-                }));
-            }
             // The handshake has this long; once it is done the caller may
             // be silent for as long as it likes.
             let _ = stream.set_read_timeout(Some(AUTH_TIMEOUT));
             let hub = hub.clone();
             let token = token.clone();
+            let seats = Arc::clone(&seats);
+            let connections = Arc::clone(&connections);
             std::thread::spawn(move || {
-                let _seat = seat;
-                connection(BufReader::new(reader), stream, hub, token, move || {
-                    let _ = timer.set_read_timeout(None);
-                });
-                // The registry above still holds a handle, so the socket is
-                // shut here rather than merely dropped: the caller sees EOF.
+                connection(
+                    BufReader::new(reader),
+                    stream,
+                    hub,
+                    token,
+                    &seats,
+                    move || {
+                        let _ = timer.set_read_timeout(None);
+                        if let Ok(mut list) = connections.lock() {
+                            list.push(Box::new(move || {
+                                let _ = closer.shutdown(std::net::Shutdown::Both);
+                            }));
+                        }
+                    },
+                );
                 let _ = ender.shutdown(std::net::Shutdown::Both);
             });
         }
@@ -154,10 +160,6 @@ pub(crate) fn serve_unix(
                 break;
             }
             let Ok(stream) = stream else { continue };
-            let Some(seat) = Seat::take(&seats) else {
-                refuse_full(stream);
-                continue;
-            };
             let Ok(reader) = stream.try_clone() else {
                 continue;
             };
@@ -170,23 +172,27 @@ pub(crate) fn serve_unix(
             let Ok(timer) = stream.try_clone() else {
                 continue;
             };
-            if let Ok(mut connections) = connections.lock() {
-                connections.push(Box::new(move || {
-                    let _ = closer.shutdown(std::net::Shutdown::Both);
-                }));
-            }
-            // The handshake has this long; once it is done the caller may
-            // be silent for as long as it likes.
             let _ = stream.set_read_timeout(Some(AUTH_TIMEOUT));
             let hub = hub.clone();
             let token = token.clone();
+            let seats = Arc::clone(&seats);
+            let connections = Arc::clone(&connections);
             std::thread::spawn(move || {
-                let _seat = seat;
-                connection(BufReader::new(reader), stream, hub, token, move || {
-                    let _ = timer.set_read_timeout(None);
-                });
-                // The registry above still holds a handle, so the socket is
-                // shut here rather than merely dropped: the caller sees EOF.
+                connection(
+                    BufReader::new(reader),
+                    stream,
+                    hub,
+                    token,
+                    &seats,
+                    move || {
+                        let _ = timer.set_read_timeout(None);
+                        if let Ok(mut list) = connections.lock() {
+                            list.push(Box::new(move || {
+                                let _ = closer.shutdown(std::net::Shutdown::Both);
+                            }));
+                        }
+                    },
+                );
                 let _ = ender.shutdown(std::net::Shutdown::Both);
             });
         }
@@ -201,6 +207,7 @@ fn connection(
     writer: impl Write + Send + 'static,
     hub: Hub,
     token: String,
+    seats: &Arc<AtomicUsize>,
     authenticated: impl FnOnce(),
 ) {
     let outbox = Outbox::start(writer);
@@ -217,14 +224,29 @@ fn connection(
     };
     let (id, outcome) = handshake(&first, &token);
     let ok = outcome.is_ok();
+    if !ok {
+        outbox.send(Message::Reply {
+            id,
+            response: outcome.into(),
+        });
+        outbox.close();
+        return;
+    }
+    let Some(_seat) = Seat::take(seats) else {
+        outbox.send(Message::Reply {
+            id,
+            response: Response::Error(ApiError::new(
+                ErrorCode::Busy,
+                format!("{MAX_CONNECTIONS} callers are connected already"),
+            )),
+        });
+        outbox.close();
+        return;
+    };
     outbox.send(Message::Reply {
         id,
         response: outcome.into(),
     });
-    if !ok {
-        outbox.close();
-        return;
-    }
     authenticated();
 
     // Events reach this caller from here on: the outbox is shared with the
